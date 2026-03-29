@@ -15,6 +15,10 @@ from .pipeline import SubtitleRenderOptions, run_pipeline
 from .utils.files import ensure_dir, safe_filename, save_upload
 
 
+SUPPORTED_AUDIO_EXTENSIONS = {".mp3", ".wav", ".m4a", ".aac", ".flac", ".ogg", ".wma"}
+SUPPORTED_VIDEO_EXTENSIONS = {".mp4", ".mov", ".mkv", ".avi", ".webm", ".m4v"}
+SUPPORTED_MEDIA_EXTENSIONS = SUPPORTED_AUDIO_EXTENSIONS | SUPPORTED_VIDEO_EXTENSIONS
+
 settings = load_settings()
 app = FastAPI(title="WhisperVideo")
 job_repo = JobRepository(settings.jobs_dir)
@@ -39,9 +43,13 @@ async def create_job(
     subtitle_position: str | None = Form(default=None, alias="subtitlePosition"),
     subtitle_font_size: int | None = Form(default=None, alias="subtitleFontSize"),
 ) -> JobState:
-    filename = safe_filename(audio.filename or "audio.mp3")
-    if not filename.lower().endswith(".mp3"):
-        raise HTTPException(status_code=400, detail="当前版本只支持上传 mp3 文件")
+    filename = safe_filename(audio.filename or "media.mp3")
+    suffix = Path(filename).suffix.lower()
+    if suffix not in SUPPORTED_MEDIA_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail="仅支持常见音频或视频格式：mp3、wav、m4a、aac、flac、ogg、wma、mp4、mov、mkv、avi、webm、m4v",
+        )
 
     resolved_position = normalize_subtitle_position(
         subtitle_position or settings.default_subtitle_position
@@ -83,8 +91,8 @@ def get_artifact(job_id: str, artifact_name: str) -> FileResponse:
         raise HTTPException(status_code=404, detail="任务不存在")
     path = resolve_artifact_path(job_id, artifact_name)
     if path is None or not path.exists():
-        raise HTTPException(status_code=404, detail="产物不存在")
-    return FileResponse(path)
+        raise HTTPException(status_code=404, detail="文件不存在")
+    return FileResponse(path, filename=path.name)
 
 
 static_dir = settings.app_root / "app" / "static"
@@ -93,12 +101,17 @@ app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static")
 
 def run_job(job_id: str, input_path: Path) -> None:
     try:
-        job_repo.update(job_id, status=JobStatus.running, step="starting", message="任务开始执行")
+        job_repo.update(
+            job_id,
+            status=JobStatus.running,
+            step="starting",
+            message="任务已开始处理",
+        )
         output_dir = ensure_dir(settings.outputs_dir / job_id)
         current_state = job_repo.get(job_id)
         if current_state is None:
-            raise RuntimeError("任务状态不存在")
-        artifacts = run_pipeline(
+            raise RuntimeError("任务状态丢失")
+        run_pipeline(
             settings,
             input_audio=input_path,
             output_dir=output_dir,

@@ -33,11 +33,17 @@
 
         <form id="job-form" class="job-form">
           <label class="dropzone" for="audio-input" id="dropzone">
-            <input id="audio-input" name="audio" type="file" accept=".mp3,audio/mpeg" required>
+            <input
+              id="audio-input"
+              name="audio"
+              type="file"
+              accept=".mp3,.wav,.m4a,.aac,.flac,.ogg,.wma,.mp4,.mov,.mkv,.avi,.webm,.m4v,audio/*,video/*"
+              required
+            >
             <span class="dropzone-wave"></span>
             <span class="dropzone-wave wave-two"></span>
-            <span class="dropzone-label">将 MP3 拖到这里</span>
-            <span class="dropzone-copy">或点击选择文件。当前仅支持 `.mp3`。</span>
+            <span class="dropzone-label">将音频或视频拖到这里</span>
+            <span class="dropzone-copy">或点击选择文件。支持常见音频和视频格式。</span>
             <span class="file-chip" id="file-chip">尚未选择文件</span>
           </label>
 
@@ -88,7 +94,7 @@
             <span class="status-pill idle" id="status-pill">空闲</span>
           </div>
 
-          <p class="status-message" id="status-message"></p>
+          <p class="status-message" id="status-message">选择文件后开始生成任务。</p>
 
           <dl class="status-meta">
             <div>
@@ -102,21 +108,21 @@
               <span></span>
               <div>
                 <strong>上传</strong>
-                <p>提交 MP3 与字幕参数。</p>
+                <p>提交文件与字幕参数。</p>
               </div>
             </div>
             <div class="timeline-item">
               <span></span>
               <div>
                 <strong>转写</strong>
-                <p>Whisper 输出 JSON 与文本。</p>
+                <p>生成 JSON 与文本。</p>
               </div>
             </div>
             <div class="timeline-item">
               <span></span>
               <div>
                 <strong>渲染</strong>
-                <p>生成 SRT 与带字幕视频。</p>
+                <p>生成字幕和视频。</p>
               </div>
             </div>
           </div>
@@ -157,7 +163,7 @@
                 <p class="eyebrow">下载</p>
                 <h3>文件</h3>
               </div>
-              <p class="artifact-copy" id="artifact-copy">结果尚未生成。</p>
+              <p class="artifact-copy" id="artifact-copy"></p>
             </div>
 
             <div class="artifact-grid">

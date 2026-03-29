@@ -72,7 +72,7 @@ for (const input of form.querySelectorAll('input[name="subtitlePosition"]')) {
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!audioInput.files?.length) {
-    setIdleState("请先选择一个 MP3 文件。");
+    setIdleState("请先选择一个音频或视频文件。");
     return;
   }
 
@@ -83,7 +83,6 @@ form.addEventListener("submit", async (event) => {
     status: "running",
     message: "上传任务已提交，正在等待后端接收。",
     step: "queued",
-    jobId: "等待分配",
   });
   applyArtifacts({});
 
@@ -180,17 +179,16 @@ function updateFromJob(job) {
   }
 
   if (status === "failed") {
-    setFailedState(message, job.jobId || currentJobId || "未知", step);
+    setFailedState(message, step);
     applyArtifacts(job.artifacts || {});
     return;
   }
 
   setRunningState({
-    title: "工作台处理中",
+    title: "处理中",
     status,
     message,
     step,
-    jobId: job.jobId || currentJobId || "未知",
   });
   applyArtifacts(job.artifacts || {});
 }
@@ -204,24 +202,24 @@ function setIdleState(message) {
   applyTimeline("waiting", "idle");
 }
 
-function setRunningState({ title, status, message, step, jobId }) {
+function setRunningState({ title, status, message, step }) {
   statusTitle.textContent = title;
   statusPill.textContent = statusTextMap[status] || statusTextMap.running;
   statusPill.className = "status-pill running";
   statusMessage.textContent = message;
   statusStep.textContent = step;
-  artifactCopy.textContent = "任务处理中，产物将在生成后逐步可用。";
+  artifactCopy.textContent = "";
   applyTimeline(step, status);
   hideVideo();
 }
 
-function setFailedState(message, jobId = currentJobId || "未知", step = "failed") {
+function setFailedState(message, step = "failed") {
   statusTitle.textContent = "任务失败";
   statusPill.textContent = statusTextMap.failed;
   statusPill.className = "status-pill failed";
   statusMessage.textContent = message;
   statusStep.textContent = step;
-  artifactCopy.textContent = "任务失败，检查后端错误信息后可重新提交。";
+  artifactCopy.textContent = "";
   applyTimeline(step, "failed");
   hideVideo();
 }
@@ -229,13 +227,11 @@ function setFailedState(message, jobId = currentJobId || "未知", step = "faile
 function applyTimeline(step, status) {
   const items = Array.from(timeline.querySelectorAll(".timeline-item"));
   const stepText = String(step || "").toLowerCase();
-  const activeIndex = stepText.includes("render")
+  const activeIndex = stepText.includes("render") || stepText.includes("burn")
     ? 2
-    : stepText.includes("srt") || stepText.includes("video")
-      ? 2
-      : stepText.includes("trans") || stepText.includes("json") || stepText.includes("text")
-        ? 1
-        : 0;
+    : stepText.includes("trans") || stepText.includes("json") || stepText.includes("text") || stepText.includes("extract")
+      ? 1
+      : 0;
 
   items.forEach((item, index) => {
     item.classList.remove("active", "done");
@@ -283,6 +279,6 @@ function hideVideo() {
   emptyState.style.display = "";
 }
 
-setIdleState("选择文件后开始生成任务，处理结果会在右侧实时展开。");
+setIdleState("选择文件后开始生成任务。");
 syncFileState();
 updateSampleSubtitle();
