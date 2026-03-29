@@ -1,0 +1,12 @@
+.idea/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+workspace/uploads/*
+workspace/jobs/*
+workspace/outputs/*
+!workspace/uploads/.gitkeep
+!workspace/jobs/.gitkeep
+!workspace/outputs/.gitkeep

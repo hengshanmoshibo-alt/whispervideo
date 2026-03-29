@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhisperVideo</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <div class="ambient ambient-a"></div>
+    <div class="ambient ambient-b"></div>
+    <div class="grid-glow"></div>
+
+    <header class="topbar">
+      <div class="brand-lockup">
+        <span class="brand-mark">WV</span>
+        <div>
+          <p class="eyebrow">WhisperVideo</p>
+          <h1>音频字幕生成</h1>
+        </div>
+      </div>
+      <p class="topbar-copy"></p>
+    </header>
+
+    <main class="workspace">
+      <section class="panel panel-control">
+        <div class="panel-head">
+          <p class="eyebrow">上传</p>
+          <h2></h2>
+          <p class="panel-copy"></p>
+        </div>
+
+        <form id="job-form" class="job-form">
+          <label class="dropzone" for="audio-input" id="dropzone">
+            <input id="audio-input" name="audio" type="file" accept=".mp3,audio/mpeg" required>
+            <span class="dropzone-wave"></span>
+            <span class="dropzone-wave wave-two"></span>
+            <span class="dropzone-label">将 MP3 拖到这里</span>
+            <span class="dropzone-copy">或点击选择文件。当前仅支持 `.mp3`。</span>
+            <span class="file-chip" id="file-chip">尚未选择文件</span>
+          </label>
+
+          <div class="control-card">
+            <div class="control-heading">
+              <p class="eyebrow">设置</p>
+              <h3>字幕</h3>
+            </div>
+
+            <div class="field-group">
+              <span class="field-label">字幕位置</span>
+              <div class="segmented" id="position-segmented">
+                <label>
+                  <input type="radio" name="subtitlePosition" value="top">
+                  <span>顶部</span>
+                </label>
+                <label>
+                  <input type="radio" name="subtitlePosition" value="middle">
+                  <span>中间</span>
+                </label>
+                <label>
+                  <input type="radio" name="subtitlePosition" value="bottom" checked>
+                  <span>底部</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <div class="range-head">
+                <span class="field-label">字幕字号</span>
+                <span class="range-value"><strong id="font-size-value">32</strong> px</span>
+              </div>
+              <input id="font-size-input" type="range" name="subtitleFontSize" min="16" max="96" value="32">
+            </div>
+          </div>
+
+          <button id="submit-button" class="primary-button" type="submit">
+            <span>开始生成</span>
+          </button>
+        </form>
+
+        <aside class="status-card" id="status-card">
+          <div class="status-head">
+            <div>
+              <p class="eyebrow">状态</p>
+              <h3 id="status-title">等待上传</h3>
+            </div>
+            <span class="status-pill idle" id="status-pill">空闲</span>
+          </div>
+
+          <p class="status-message" id="status-message"></p>
+
+          <dl class="status-meta">
+            <div>
+              <dt>当前步骤</dt>
+              <dd id="status-step">等待中</dd>
+            </div>
+          </dl>
+
+          <div class="timeline" id="timeline">
+            <div class="timeline-item active">
+              <span></span>
+              <div>
+                <strong>上传</strong>
+                <p>提交 MP3 与字幕参数。</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <span></span>
+              <div>
+                <strong>转写</strong>
+                <p>Whisper 输出 JSON 与文本。</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <span></span>
+              <div>
+                <strong>渲染</strong>
+                <p>生成 SRT 与带字幕视频。</p>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="panel panel-preview">
+        <div class="panel-head">
+          <p class="eyebrow"></p>
+          <h2></h2>
+          <p class="panel-copy"></p>
+        </div>
+
+        <div class="preview-stage" id="preview-stage">
+          <div class="screen-frame empty" id="screen-frame">
+            <div class="screen-overlay"></div>
+            <div class="preview-canvas" id="preview-canvas">
+              <div class="preview-bars">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <div class="sample-subtitle is-bottom" id="sample-subtitle">这是一条字幕预览</div>
+            </div>
+            <video id="preview-video" controls playsinline></video>
+            <div class="empty-state" id="empty-state">
+              <p class="eyebrow">预览</p>
+              <h3></h3>
+              <p></p>
+            </div>
+          </div>
+
+          <div class="artifact-card">
+            <div class="artifact-head">
+              <div>
+                <p class="eyebrow">下载</p>
+                <h3>文件</h3>
+              </div>
+              <p class="artifact-copy" id="artifact-copy">结果尚未生成。</p>
+            </div>
+
+            <div class="artifact-grid">
+              <a class="artifact-link disabled" id="artifact-json" href="#" download>JSON</a>
+              <a class="artifact-link disabled" id="artifact-srt" href="#" download>SRT</a>
+              <a class="artifact-link disabled" id="artifact-text" href="#" download>文本</a>
+              <a class="artifact-link disabled artifact-link-primary" id="artifact-video" href="#" download>视频</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
