@@ -18,6 +18,7 @@ class Settings:
     whisper_model: str
     whisper_model_dir: str
     whisper_language: str
+    whisper_device: str
     ffmpeg_bin: str
     default_subtitle_position: str
     default_subtitle_font_size: int
@@ -47,11 +48,12 @@ def load_settings() -> Settings:
         whisper_model=env_value(env_map, "WHISPERVIDEO_WHISPER_MODEL", "small"),
         whisper_model_dir=env_value(env_map, "WHISPERVIDEO_WHISPER_MODEL_DIR", ""),
         whisper_language=env_value(env_map, "WHISPERVIDEO_WHISPER_LANGUAGE", "en"),
+        whisper_device=env_value(env_map, "WHISPERVIDEO_WHISPER_DEVICE", "auto"),
         ffmpeg_bin=env_value(env_map, "WHISPERVIDEO_FFMPEG_BIN", "ffmpeg"),
         default_subtitle_position=env_value(env_map, "WHISPERVIDEO_SUBTITLE_POSITION", "bottom"),
         default_subtitle_font_size=int(env_value(env_map, "WHISPERVIDEO_SUBTITLE_FONT_SIZE", "32")),
         default_subtitle_margin_v=int(env_value(env_map, "WHISPERVIDEO_SUBTITLE_MARGIN_V", "40")),
-        default_subtitle_outline=int(env_value(env_map, "WHISPERVIDEO_SUBTITLE_OUTLINE", "2")),
+        default_subtitle_outline=int(env_value(env_map, "WHISPERVIDEO_SUBTITLE_OUTLINE", "1")),
     )
 
 

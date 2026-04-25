@@ -101,6 +101,8 @@ def run_whisper(settings: Settings, input_audio: Path, output_dir: Path) -> Path
         "--verbose",
         "False",
     ]
+    if settings.whisper_device.strip() and settings.whisper_device.strip().lower() != "auto":
+        cmd.extend(["--device", settings.whisper_device.strip()])
     if not model_path.exists() and settings.whisper_model_dir.strip():
         cmd.extend(["--model_dir", settings.whisper_model_dir.strip()])
     subprocess.run(cmd, check=True)
@@ -161,18 +163,16 @@ def burn_subtitles(
     margin_v: int,
     outline: int,
 ) -> None:
-    alignment = subtitle_alignment_value(position)
-    force_style = (
-        f"Alignment={alignment},"
-        f"MarginV={margin_v},"
-        f"Fontsize={font_size},"
-        f"Outline={outline},"
-        "Shadow=0"
+    subtitle_ass = subtitle_srt.with_suffix(".ass")
+    write_ass_from_srt(
+        subtitle_srt,
+        subtitle_ass,
+        position=position,
+        font_size=font_size,
+        margin_v=margin_v,
+        outline=outline,
     )
-    subtitle_filter = (
-        f"subtitles='{ffmpeg_filter_path(subtitle_srt)}':charenc=UTF-8:"
-        f"force_style='{force_style}'"
-    )
+    subtitle_filter = f"subtitles='{ffmpeg_filter_path(subtitle_ass)}'"
     cmd = [
         ffmpeg_bin,
         "-y",
@@ -185,6 +185,96 @@ def burn_subtitles(
         str(video_out),
     ]
     subprocess.run(cmd, check=True)
+
+
+def write_ass_from_srt(
+    srt_path: Path,
+    ass_path: Path,
+    *,
+    position: str,
+    font_size: int,
+    margin_v: int,
+    outline: int,
+) -> Path:
+    alignment = subtitle_alignment_value(position)
+    events = []
+    for start, end, text in parse_srt_entries(srt_path):
+        events.append(
+            "Dialogue: 0,"
+            f"{format_ass_time(start)},"
+            f"{format_ass_time(end)},"
+            "Default,,0,0,0,,"
+            f"{escape_ass_text(text)}"
+        )
+
+    ass_text = "\n".join(
+        [
+            "[Script Info]",
+            "ScriptType: v4.00+",
+            "PlayResX: 1280",
+            "PlayResY: 720",
+            "WrapStyle: 0",
+            "ScaledBorderAndShadow: yes",
+            "",
+            "[V4+ Styles]",
+            "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, "
+            "Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, "
+            "Shadow, Alignment, MarginL, MarginR, MarginV, Encoding",
+            "Style: Default,Arial,"
+            f"{font_size},&H00FFFFFF,&H000000FF,&H00000000,&H7F000000,"
+            f"0,0,0,0,100,100,0,0,1,{max(1, outline)},0,{alignment},40,40,{margin_v},1",
+            "",
+            "[Events]",
+            "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
+            *events,
+            "",
+        ]
+    )
+    ass_path.write_text(ass_text, encoding="utf-8")
+    return ass_path
+
+
+def parse_srt_entries(srt_path: Path) -> list[tuple[float, float, str]]:
+    entries: list[tuple[float, float, str]] = []
+    blocks = srt_path.read_text(encoding="utf-8").replace("\r\n", "\n").split("\n\n")
+    for block in blocks:
+        lines = [line.strip() for line in block.splitlines() if line.strip()]
+        if len(lines) < 3 or "-->" not in lines[1]:
+            continue
+        start_raw, end_raw = [part.strip() for part in lines[1].split("-->", 1)]
+        text = "\n".join(lines[2:]).strip()
+        if text:
+            entries.append((parse_srt_time(start_raw), parse_srt_time(end_raw), text))
+    return entries
+
+
+def parse_srt_time(value: str) -> float:
+    hours_raw, minutes_raw, rest = value.split(":", 2)
+    seconds_raw, millis_raw = rest.split(",", 1)
+    return (
+        int(hours_raw) * 3600
+        + int(minutes_raw) * 60
+        + int(seconds_raw)
+        + int(millis_raw) / 1000
+    )
+
+
+def format_ass_time(seconds: float) -> str:
+    centis = int(round(seconds * 100.0))
+    hours = centis // 360000
+    minutes = (centis % 360000) // 6000
+    secs = (centis % 6000) // 100
+    cs = centis % 100
+    return f"{hours}:{minutes:02d}:{secs:02d}.{cs:02d}"
+
+
+def escape_ass_text(text: str) -> str:
+    return (
+        text.replace("\\", "\\\\")
+        .replace("{", "\\{")
+        .replace("}", "\\}")
+        .replace("\n", "\\N")
+    )
 
 
 def ffmpeg_filter_path(path: Path) -> str:
